@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import DataTable from 'react-data-table-component';
 import * as XLSX from 'xlsx';
 import { LineChart, ResponsiveContainer, Legend, Tooltip, 
   Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import logo from './logo.svg';
 import './App.css';
 
 // Styling a regular HTML input
@@ -82,49 +81,14 @@ export function Checkboxes({ checkboxes, setCheckbox }) {
 }
 
 // Sample chart data
-const pdata = [
-    /*{
-        name: 'MongoDb',
-        student: 11,
-        fees: 120
-    },
-    {
-        name: 'Javascript',
-        student: 15,
-        fees: 12
-    },
-    {
-        name: 'PHP',
-        student: 5,
-        fees: 10
-    },
-    {
-        name: 'Java',
-        student: 10,
-        fees: 5
-    },
-    {
-        name: 'C#',
-        student: 9,
-        fees: 4
-    },
-    {
-        name: 'C++',
-        student: 10,
-        fees: 8
-    },*/
-];
+const pdata = [];
 const pdata2 = [];
 
-function App() {
-	const updatePlot = () => {
-		this.setState({data: pdata2});
-	}
-	
+function App() {	
 	const [columns, setColumns] = useState([]);
   const [data, setData] = useState([]);
 	const [chartData, setChartData] = useState(pdata);
-	const [clientId, setClientId] = useState(5001720);
+	const [clientId, setClientId] = useState("5001720");
 	const [ranking, setRanking] = useState("Nenhum modelo novo foi treinado");
 	const [currentModel, setCurrentModel] = useState("O modelo inicial ainda não foi retreinado");
 	const [currentSimul, setCurrentSimul] = useState("Não foi simulado o crédito de nenhum indivíduo");
@@ -138,7 +102,7 @@ function App() {
 	const [n_meses, setMonthly] = useState(0);
 	const [credit, setCredit] = useState(0);
 
-	const inputClientId = useInput(5001720);
+	const inputClientId = useInput("5001720");
   const inputNFilho = useInput(2);
 	const inputRendaTotal = useInput(200000);
 	const inputDataNasc = useInput("01-01-1980");
@@ -155,10 +119,6 @@ function App() {
 	const techList = [{label:"Regressão Logística",value:0}, {label:"Árvore de Decisão",value:1}, {label:"Random Forest",value:2}, {label:"SVM",value:3},{label:"LGBM",value:4},{label:"XGBoost",value:5},{label:"Cat Boost",value:6}];
 	const monthlyBillList	= [{label:"1 mês de atraso",value:0}, {label:"2 meses de atraso",value:1}, {label:"3 meses de atraso",value:2}, {label:"4 meses de atraso",value:3}, {label:"5 meses de atraso",value:4}];
 	const losingCreditList = [{label:"1 vez",value:0}, {label:"2 vezes",value:1}, {label:"3 vezes", value:2}, {label:"4 vezes", value:3}, {label:"5 vezes", value:4}];
-	
-	/*const handleChange = e => {
-		setSelectedValue({e: e.value});
-	}*/
 	
 	const handleUpdateClick = e => {
 		const url = "http://localhost:5000/update"
@@ -224,15 +184,17 @@ function App() {
 
 			// remove the blank rows
 			if (Object.values(obj).filter(x => x).length > 0) {
-				if (obj['"ID"'] === {clientId}) {
-					console.log('veio');
+				if (obj['"ID"'] === clientId) {
 					pdata2.push(obj);
 				}
 				
 				list.push(obj);
 			}
 	  }
+		
 	}
+	
+	setChartData(pdata2);
 
 	// prepare columns list from headers
 	const columns = headers.map(c => ({
@@ -269,16 +231,18 @@ function App() {
 		
 		<button style={{marginRight: "10"}} onClick={() => handleUpdateClick()}>Atualizar</button>
 		<button style={{marginLeft: "10"}} onClick={() => handleResetClick()}>Resetar</button> 
-		<table class="table table-striped">
+		<table className="table table-striped">
 			<thead>
-				<th>Data</th>
-				<th>Modelo</th>
-				<th>Meses considerados</th>
-				<th>Atraso considerado</th>
-				<th><strong>Acurácia</strong></th>
-				<th><strong>Precisão</strong></th>
-				<th><strong>Recall</strong></th>
-				<th><strong>F1</strong></th>
+				<tr>
+					<th>Data</th>
+					<th>Modelo</th>
+					<th>Meses considerados</th>
+					<th>Atraso considerado</th>
+					<th><strong>Acurácia</strong></th>
+					<th><strong>Precisão</strong></th>
+					<th><strong>Recall</strong></th>
+					<th><strong>F1</strong></th>
+				</tr>
 			</thead>
 			<tbody>
 			{ranking}
@@ -418,7 +382,12 @@ function App() {
 	
 	
 	<h2>Evolução do pagamento de um cliente (id={clientId})</h2>
-	
+		<p>Para encontrar os IDs de clientes, abra o banco clicando em Browse... e selecionando credit_record.csv</p>
+		<p>Para visualizar a evolução de um cliente:</p>
+		<ul>
+			<li>Digite seu ID abaixo e clique em Atualizar</li>
+			<li>Abra novamente o banco, clicando em Browse... e selecionando credit_record.csv</li>
+		</ul>
 	  <ResponsiveContainer width="100%" aspect={3}>
 			<LineChart data={chartData} margin={{ right: 300 }}>
 				<CartesianGrid />
