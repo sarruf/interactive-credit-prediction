@@ -116,7 +116,7 @@ function App() {
 	const estateTypeList = [{label:"Casa/apartamento próprio",value:0}, {label:"Mora com os pais",value:1}, {label:"Apartamento do Estado", value:2},{label:"Apartamento alugado", value:3},{label:"Escritório", value:4}];
 	const occupationList = [{label:"Profissional de limpeza",value:0}, {label:"Profissional de cozinha",value:1}, {label:"Motorista", value:2},{label:"Profissional", value:3},{label:"Profissional de baixa qualificação", value:4},{label:"Profissional de segurança", value:5},{label:"Garçom/barman", value:6},{label:"Contador(a)", value:7},{label:"Funcionário(a) de escritório", value:8},{label:"Funcionário(a) de RH", value:9},{label:"Profissional de saúde", value:10},{label:"Funcionário(a) do serviço privado", value:11},{label:"Corretor(a) de imóveis", value:12},{label:"Vendedor(a)", value:13},{label:"Secretário(a)", value:14},{label:"Gerente", value:15},{label:"Funcionário(a) de tecnologia qualificado(a)", value:16},{label:"Funcionário(a) de TI", value:17}];
 	const genderList = [{label:"Feminino",value:0}, {label:"Masculino",value:1}];
-	const techList = [{label:"Regressão Logística",value:0}, {label:"Árvore de Decisão",value:1}, {label:"Random Forest",value:2}, {label:"SVM",value:3},{label:"LGBM",value:4},{label:"XGBoost",value:5},{label:"Cat Boost",value:6}];
+	const techList = [{label:"Regressão Logística",value:0}, {label:"Árvore de Decisão",value:1}, {label:"Random Forest",value:2}, {label:"SVM",value:3},{label:"LGBM",value:4},{label:"XGBoost",value:5},{label:"Cat Boost (leva alguns minutos)",value:6}];
 	const monthlyBillList	= [{label:"1 mês de atraso",value:0}, {label:"2 meses de atraso",value:1}, {label:"3 meses de atraso",value:2}, {label:"4 meses de atraso",value:3}, {label:"5 meses de atraso",value:4}];
 	const losingCreditList = [{label:"1 vez",value:0}, {label:"2 vezes",value:1}, {label:"3 vezes", value:2}, {label:"4 vezes", value:3}, {label:"5 vezes", value:4}];
 	
@@ -227,7 +227,7 @@ function App() {
   return (
 	<div className="App">
 
-		<h2>Ranking de acurácia dos modelos treinados</h2>
+		<h2>Ranking das métricas dos 10 melhores modelos treinados</h2>
 		
 		<button style={{marginRight: "10"}} onClick={() => handleUpdateClick()}>Atualizar</button>
 		<button style={{marginLeft: "10"}} onClick={() => handleResetClick()}>Resetar</button> 
@@ -236,8 +236,8 @@ function App() {
 				<tr>
 					<th>Data</th>
 					<th>Modelo</th>
-					<th>Meses considerados</th>
-					<th>Atraso considerado</th>
+					<th>Limiar de atraso (meses)</th>
+					<th>Número de atrasos</th>
 					<th><strong>Acurácia</strong></th>
 					<th><strong>Precisão</strong></th>
 					<th><strong>Recall</strong></th>
@@ -249,6 +249,7 @@ function App() {
 			</tbody>
 		</table>
 		
+		<br/><br/>
 		
 		<h2>Modificação do modelo treinado</h2>
 	

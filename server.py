@@ -1,19 +1,12 @@
-from flask import Flask, jsonify
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from pymongo import MongoClient, DESCENDING
 from datetime import datetime
+from flask import Flask, jsonify
+from pymongo import MongoClient, DESCENDING
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 from creditcase import train_model, predict
 
 app = Flask(__name__)
-tech = "svm"
-n_meses = 1
-x = 1
-model, X_train, X_test, y_train, y_test, y_predict = train_model(tech, n_meses, x)
 
-cliente = MongoClient("localhost", 27017)
-banco = cliente["projeto"]
-colecao = banco["tested_models"]
 
 @app.route('/retrain/<int:tech>/<int:n_meses>/<int:x>')
 def treinar_modelo(tech, n_meses, x):
@@ -53,11 +46,12 @@ def atualiza_modelos_treinados():
     ordenacao = [ ["accuracy", DESCENDING] ]
     documentos = list( colecao.find(busca, sort=ordenacao) )
     ret = []
-    for documento in documentos:
-        print(documento["accuracy"])
-        ret.append({"data": documento["data"], "tech": documento["tech"], "meses": documento["meses"], 
-                    "atraso": documento["atraso"], "accuracy": documento["accuracy"], 
-                    "precision": documento["precision"], "recall": documento["recall"], "f1": documento["f1"],})
+    for i in range(len(documentos)):
+        if i >= 10:
+            break
+        ret.append({"data": documentos[i]["data"], "tech": documentos[i]["tech"], "meses": documentos[i]["meses"], 
+                    "atraso": documentos[i]["atraso"], "accuracy": documentos[i]["accuracy"], 
+                    "precision": documentos[i]["precision"], "recall": documentos[i]["recall"], "f1": documentos[i]["f1"]})
     return jsonify(ret)
     
 @app.route('/reset')
@@ -72,4 +66,24 @@ def simula_credito(nf, rn, dn, da, ni, re, es, ec, tm, to, gn, car, rp, ce, tp, 
         return jsonify({'simul': 'Previsão: receber crédito'})
     return jsonify({'simul': 'Previsão: não receber crédito'})
 
+
+# Conexao com o MongoDB
+cliente = MongoClient("localhost", 27017)
+banco = cliente["projeto"]
+colecao = banco["tested_models"]
+
+# Treinamento inicial do modelo
+tech = 0
+n_meses = 1
+x = 1
+
+model, X_train, X_test, y_train, y_test, y_predict = train_model(tech, n_meses, x)
+dados = {"data": datetime.now(), "tech": "Regressão Logística", "meses": n_meses, "atraso": x, 
+            "accuracy": accuracy_score(y_test, y_predict),
+            "precision": precision_score(y_test, y_predict),
+            "recall": recall_score(y_test, y_predict),
+            "f1": f1_score(y_test, y_predict)}
+colecao.insert_one(dados)
+
+# Servidor ligado
 app.run(port=5000)

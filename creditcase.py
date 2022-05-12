@@ -3,7 +3,6 @@
 #matplotlib inline
 #config InlineBackend.figure_format = 'svg'
 
-
 import warnings
 warnings.filterwarnings('ignore')
 import datetime
@@ -24,7 +23,6 @@ import seaborn as sns
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
-
 
 
 def train_model(tech, n_meses, x):
@@ -220,7 +218,7 @@ def train_model(tech, n_meses, x):
     data.head()
     
     # Possui telefone profissional (não possui - 0, possui - 1)
-    new_data['wkphone']=new_data['wkphone'].astype(str)
+    new_data['wkphone']=new_data['wkphone'].astype(np.int64)
     iv, data = calc_iv(new_data,'wkphone','target')
     new_data.drop(new_data[new_data['wkphone'] == 'nan' ].index, inplace=True)
     ivtable.loc[ivtable['variable']=='wkphone','IV']=iv
@@ -353,6 +351,16 @@ def train_model(tech, n_meses, x):
     sns.set_style('white') 
     class_names = ['0','1']
     
+    def plot_importance(classifer, x_train, point_size = 25):
+        #plot feature importance
+        values = sorted(zip(x_train.columns, classifer.feature_importances_), key = lambda x: x[1] * -1)
+        imp = pd.DataFrame(values,columns = ["Name", "Score"])
+        imp.sort_values(by = 'Score',inplace = True)
+        sns.scatterplot(x = 'Score',y='Name', linewidth = 0,
+                    data = imp,s = point_size, color='red').set(
+        xlabel='importance', 
+        ylabel='features')
+    
     # Seleção do modelo a ser usado
     
     # Regressão logística
@@ -413,21 +421,11 @@ def train_model(tech, n_meses, x):
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))
+        plot_importance(model, X_train,20)       
+        model.booster_.feature_importance(importance_type='gain')
     
     # XGBoost
     elif tech == 5:
-        def plot_importance(classifer, x_train, point_size = 25):
-            #plot feature importance
-            values = sorted(zip(x_train.columns, classifer.feature_importances_), key = lambda x: x[1] * -1)
-            imp = pd.DataFrame(values,columns = ["Name", "Score"])
-            imp.sort_values(by = 'Score',inplace = True)
-            sns.scatterplot(x = 'Score',y='Name', linewidth = 0,
-                        data = imp,s = point_size, color='red').set(
-            xlabel='importance', 
-            ylabel='features')
-        plot_importance(model, X_train,20)       
-        model.booster_.feature_importance(importance_type='gain')
-        
         model = XGBClassifier(max_depth=12,
                               n_estimators=250,
                               min_child_weight=8, 
@@ -563,4 +561,3 @@ def predict(model, nf, rn, dn, da, ni, re, es, ec, tm, to, gn, car, rp, ce, tp, 
   
     return model.predict([params])
 
-#retrain_model("", 0, 0)
