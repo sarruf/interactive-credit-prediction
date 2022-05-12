@@ -1,6 +1,5 @@
 from flask import Flask, jsonify
-import time
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from pymongo import MongoClient, DESCENDING
 from datetime import datetime
 
@@ -8,29 +7,23 @@ from creditcase import train_model, predict
 
 app = Flask(__name__)
 tech = "svm"
-meses = 0
-atraso = 1
-model, X_train, X_test, y_train, y_test, y_predict = train_model(tech, meses, atraso)
+n_meses = 1
+x = 1
+model, X_train, X_test, y_train, y_test, y_predict = train_model(tech, n_meses, x)
 
 cliente = MongoClient("localhost", 27017)
 banco = cliente["projeto"]
 colecao = banco["tested_models"]
-'''dados = {"nome": "Jan K. S.", "idade": 32}
-colecao.insert(dados)
-colecao.insert([dados1, dados2])
-busca = {"chave1": valor1, "chave2": {"$gt": valor2}}
-ordenacao = [ ["idade", DESCENDING] ]
-documento = colecao.find_one(busca, sort=ordenacao)
-documentos = list( colecao.find(busca, sort=ordenacao) )'''
 
-@app.route('/teste')
-def pagina_principal():
-    return jsonify({'time': time.time()})
-
-@app.route('/retrain/<int:tech>/<int:meses>/<int:atraso>')
-def treinar_modelo(tech, meses, atraso):
+@app.route('/retrain/<int:tech>/<int:n_meses>/<int:x>')
+def treinar_modelo(tech, n_meses, x):
     global model, X_train, X_test, y_train, y_test, y_predict
-    model, X_train, X_test, y_train, y_test, y_predict = train_model(tech, meses, atraso)
+    
+    # índice comeca em 0, mas n_meses e x comecam em 1
+    n_meses += 1
+    x += 1
+    
+    model, X_train, X_test, y_train, y_test, y_predict = train_model(tech, n_meses, x)
     tn = ""
     if tech == 0:
         tn = "Regressão Logística"
@@ -46,10 +39,13 @@ def treinar_modelo(tech, meses, atraso):
         tn = "XGBoost"
     else:
         tn = "Cat Boost"
-    dados = {"data": datetime.now(), "tech": tn, "meses": meses, "atraso": atraso, 
-             "accuracy": accuracy_score(y_test, y_predict)}
+    dados = {"data": datetime.now(), "tech": tn, "meses": n_meses, "atraso": x, 
+             "accuracy": accuracy_score(y_test, y_predict),
+             "precision": precision_score(y_test, y_predict),
+             "recall": recall_score(y_test, y_predict),
+             "f1": f1_score(y_test, y_predict)}
     colecao.insert_one(dados)
-    return jsonify({'model': tech * meses * atraso})
+    return jsonify({'model': 'Modelo retreinado e métricas salvas na tabela'})
 
 @app.route('/update')
 def atualiza_modelos_treinados():
@@ -60,7 +56,8 @@ def atualiza_modelos_treinados():
     for documento in documentos:
         print(documento["accuracy"])
         ret.append({"data": documento["data"], "tech": documento["tech"], "meses": documento["meses"], 
-                    "atraso": documento["atraso"], "accuracy": documento["accuracy"]})
+                    "atraso": documento["atraso"], "accuracy": documento["accuracy"], 
+                    "precision": documento["precision"], "recall": documento["recall"], "f1": documento["f1"],})
     return jsonify(ret)
     
 @app.route('/reset')

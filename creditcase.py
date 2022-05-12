@@ -3,9 +3,10 @@
 #matplotlib inline
 #config InlineBackend.figure_format = 'svg'
 
-import datetime
+
 import warnings
 warnings.filterwarnings('ignore')
+import datetime
 import numpy as np
 import pandas as pd   
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ import itertools
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 import seaborn as sns
@@ -26,7 +27,7 @@ from catboost import CatBoostClassifier
 
 
 
-def train_model(tech, meses, atraso):
+def train_model(tech, n_meses, x):
     # abre os 2 bancos
     data = pd.read_csv("banco/application_record.csv", encoding = 'utf-8') 
     record = pd.read_csv("banco/credit_record.csv", encoding = 'utf-8')  
@@ -38,20 +39,27 @@ def train_model(tech, meses, atraso):
     begin_month=begin_month.rename(columns={'MONTHS_BALANCE':'begin_month'}) 
     new_data=pd.merge(data,begin_month,how="left",on="ID") # merge to record data
     
-    # cria coluna 'dep_value': se está devendo a 2 meses ou mais insere 'Yes'
-    record['dep_value'] = None
-    #record['dep_value'][record['STATUS'] > str(atraso)]='Yes' 
-    #record['dep_value'][record['STATUS'] == str(atraso)]='No' 
+    # cria coluna 'credit_abuse': se ficou devendo 'n_meses' ou mais em algum
+    # momento insere 'Yes'
+    record['credit_abuse'] = None
     
-    record['dep_value'][record['STATUS'] =='2']='Yes' 
-    record['dep_value'][record['STATUS'] =='3']='Yes' 
-    record['dep_value'][record['STATUS'] =='4']='Yes' 
-    record['dep_value'][record['STATUS'] =='5']='Yes'
+    if n_meses >= 1:
+        record['credit_abuse'][record['STATUS'] =='1']='Yes' 
+    if n_meses >= 2:
+        record['credit_abuse'][record['STATUS'] =='2']='Yes'
+    if n_meses >= 3:
+        record['credit_abuse'][record['STATUS'] =='3']='Yes' 
+    if n_meses >= 4:
+        record['credit_abuse'][record['STATUS'] =='4']='Yes' 
+    if n_meses == 5:
+        record['credit_abuse'][record['STATUS'] =='5']='Yes'
     
-    # no banco cpunt, se está devendo a 1 mês ou mais insere 'Yes', senão 'No'
+    # no banco cpunt, classifica como 'Yes' os clientes que atrasaram por
+    # 'n_meses' 'x' ou mais vezes
     cpunt=record.groupby('ID').count()
-    cpunt['dep_value'][cpunt['dep_value'] > atraso]='Yes' 
-    cpunt['dep_value'][cpunt['dep_value'] == atraso]='No' 
+    cpunt['dep_value'] = None
+    cpunt['dep_value'][cpunt['credit_abuse'] >= x]='Yes' 
+    cpunt['dep_value'][cpunt['credit_abuse'] < x]='No' 
     cpunt = cpunt[['dep_value']]
     new_data=pd.merge(new_data,cpunt,how='inner',on='ID')
     
@@ -227,8 +235,8 @@ def train_model(tech, meses, atraso):
     new_data = convert_dummy(new_data,'ChldNo')
     
     # Renda anual (transformada em 3 categorias: low, medium, high)
-    new_data['inc']=new_data['inc'].astype(object)
-    new_data['inc'] = new_data['inc']/10000 
+    new_data['inc']=new_data['inc'].astype(np.int64)
+    new_data['inc'] = new_data['inc']/10000
     print(new_data['inc'].value_counts(bins=10,sort=False))
     new_data['inc'].plot(kind='hist',bins=50,density=True)
     new_data = get_category(new_data,'inc', 3, ["low","medium", "high"], qcut = True)
@@ -354,14 +362,10 @@ def train_model(tech, meses, atraso):
                                    solver='lbfgs')
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
-        print('Accuracy Score is {:.5}'.format(accuracy_score(y_test, y_predict)))
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))    
         plot_confusion_matrix(confusion_matrix(y_test,y_predict),
                               classes= class_names, normalize = True, 
                               title='Normalized Confusion Matrix: Logistic Regression')
-        
-        prediction = model.predict([[1,0,1,1,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,1,1,0,1,0,1,0,0,0]])
-        print ('Predicted Result: ', prediction)
     
     # Árvore de decisão
     elif tech == 1:
@@ -370,7 +374,6 @@ def train_model(tech, meses, atraso):
                                        random_state=1024)
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
-        print('Accuracy Score is {:.5}'.format(accuracy_score(y_test, y_predict)))
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))    
         plot_confusion_matrix(confusion_matrix(y_test,y_predict),
                               classes=class_names, normalize = True, 
@@ -383,7 +386,6 @@ def train_model(tech, meses, atraso):
                                       min_samples_leaf=16)
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
-        print('Accuracy Score is {:.5}'.format(accuracy_score(y_test, y_predict)))
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))
         plot_confusion_matrix(confusion_matrix(y_test,y_predict),
                               classes=class_names, normalize = True, 
@@ -395,7 +397,6 @@ def train_model(tech, meses, atraso):
                         kernel='linear')
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
-        print('Accuracy Score is {:.5}'.format(accuracy_score(y_test, y_predict)))
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))
         plot_confusion_matrix(confusion_matrix(y_test,y_predict),
                               classes=class_names, normalize = True, 
@@ -411,7 +412,6 @@ def train_model(tech, meses, atraso):
                                colsample_bytree =0.8)
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
-        print('Accuracy Score is {:.5}'.format(accuracy_score(y_test, y_predict)))
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))
     
     # XGBoost
@@ -436,7 +436,6 @@ def train_model(tech, meses, atraso):
                               seed=42)    
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
-        print('Accuracy Score is {:.5}'.format(accuracy_score(y_test, y_predict)))
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))
         plot_importance(model, X_train, 20)
     
@@ -450,7 +449,6 @@ def train_model(tech, meses, atraso):
                                    random_seed=42)
         model.fit(X_train, y_train)
         y_predict = model.predict(X_test)
-        print('CatBoost Accuracy Score is {:.5}'.format(accuracy_score(y_test, y_predict)))
         print(pd.DataFrame(confusion_matrix(y_test,y_predict)))
     
     return model, X_train, y_train, X_test, y_test, y_predict

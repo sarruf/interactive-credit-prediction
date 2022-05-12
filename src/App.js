@@ -125,9 +125,9 @@ function App() {
   const [data, setData] = useState([]);
 	const [chartData, setChartData] = useState(pdata);
 	const [clientId, setClientId] = useState(5001720);
-	const [ranking, setRanking] = useState("Nenhum modelo foi treinado");
-	const [currentModel, setCurrentModel] = useState("a");
-	const [currentSimul, setCurrentSimul] = useState("b");
+	const [ranking, setRanking] = useState("Nenhum modelo novo foi treinado");
+	const [currentModel, setCurrentModel] = useState("O modelo inicial ainda não foi retreinado");
+	const [currentSimul, setCurrentSimul] = useState("Não foi simulado o crédito de nenhum indivíduo");
 	const [income, setIncome] = useState(0);
 	const [education, setEducation] = useState(0);
 	const [marital, setMarital] = useState(0);
@@ -135,7 +135,7 @@ function App() {
 	const [occupation, setOccupation] = useState(0);
 	const [gender, setGender] = useState(0);
 	const [tech, setTech] = useState(0);
-	const [monthly, setMonthly] = useState(0);
+	const [n_meses, setMonthly] = useState(0);
 	const [credit, setCredit] = useState(0);
 
 	const inputClientId = useInput(5001720);
@@ -153,8 +153,8 @@ function App() {
 	const occupationList = [{label:"Profissional de limpeza",value:0}, {label:"Profissional de cozinha",value:1}, {label:"Motorista", value:2},{label:"Profissional", value:3},{label:"Profissional de baixa qualificação", value:4},{label:"Profissional de segurança", value:5},{label:"Garçom/barman", value:6},{label:"Contador(a)", value:7},{label:"Funcionário(a) de escritório", value:8},{label:"Funcionário(a) de RH", value:9},{label:"Profissional de saúde", value:10},{label:"Funcionário(a) do serviço privado", value:11},{label:"Corretor(a) de imóveis", value:12},{label:"Vendedor(a)", value:13},{label:"Secretário(a)", value:14},{label:"Gerente", value:15},{label:"Funcionário(a) de tecnologia qualificado(a)", value:16},{label:"Funcionário(a) de TI", value:17}];
 	const genderList = [{label:"Feminino",value:0}, {label:"Masculino",value:1}];
 	const techList = [{label:"Regressão Logística",value:0}, {label:"Árvore de Decisão",value:1}, {label:"Random Forest",value:2}, {label:"SVM",value:3},{label:"LGBM",value:4},{label:"XGBoost",value:5},{label:"Cat Boost",value:6}];
-	const monthlyBillList	= [{label:"Últimos 3 meses",value:0}, {label:"Últimos 6 meses",value:1}, {label:"Todos os meses",value:2}];
-	const losingCreditList = [{label:"Atraso de 60 dias",value:0}, {label:"Atraso de 90 dias",value:1}, {label:"Atraso de 120 dias", value:2}];
+	const monthlyBillList	= [{label:"1 mês de atraso",value:0}, {label:"2 meses de atraso",value:1}, {label:"3 meses de atraso",value:2}, {label:"4 meses de atraso",value:3}, {label:"5 meses de atraso",value:4}];
+	const losingCreditList = [{label:"1 vez",value:0}, {label:"2 vezes",value:1}, {label:"3 vezes", value:2}, {label:"4 vezes", value:3}, {label:"5 vezes", value:4}];
 	
 	/*const handleChange = e => {
 		setSelectedValue({e: e.value});
@@ -167,7 +167,7 @@ function App() {
 		.then((data) => 
 			setRanking(data.map(
 				(dt) => {
-					return <tr><td>{dt.data}</td><td>{dt.tech}</td><td>{dt.meses}</td><td>{dt.atraso}</td><td>{dt.accuracy}</td></tr>
+					return <tr><td>{dt.data}</td><td>{dt.tech}</td><td>{dt.meses}</td><td>{dt.atraso}</td><td>{dt.accuracy.toFixed(4)}</td><td>{dt.precision.toFixed(4)}</td><td>{dt.recall.toFixed(4)}</td><td>{dt.f1.toFixed(4)}</td></tr>
 				}
 			)));
 	}
@@ -179,7 +179,7 @@ function App() {
 	}
 	
 	const handleRetrainClick = e => {
-		const url = "http://localhost:5000/retrain/" + tech + "/" + monthly + "/" + credit
+		const url = "http://localhost:5000/retrain/" + tech + "/" + n_meses + "/" + credit
 		fetch(url)
 		.then((res) => res.json())
 		.then((data) => {
@@ -198,14 +198,6 @@ function App() {
 				setCurrentSimul(data.simul);
 		});
 	}
-		
-	//useEffect(() => {
-	//	fetch('http://localhost:5000/teste')
-	//			.then((res) => res.json())
-	//			.then((data) => {
-	//					setCurrentTime(data.time);
-	//			});
-	//}, []);
 		
   // process CSV data
 	const processData = dataString => {
@@ -271,23 +263,6 @@ function App() {
 	}
 
   return (
-    /*<div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );*/
 	<div className="App">
 
 		<h2>Ranking de acurácia dos modelos treinados</h2>
@@ -301,6 +276,9 @@ function App() {
 				<th>Meses considerados</th>
 				<th>Atraso considerado</th>
 				<th><strong>Acurácia</strong></th>
+				<th><strong>Precisão</strong></th>
+				<th><strong>Recall</strong></th>
+				<th><strong>F1</strong></th>
 			</thead>
 			<tbody>
 			{ranking}
@@ -321,15 +299,15 @@ function App() {
 		<div style={{textAlign: "left"}}>
 		  <strong>Critérios para exclusão do crédito:</strong>
 			<div style={{textAlign: "left"}}>
-				Meses de fatura considerados:
-				<select value={monthly} onChange={(e) => setMonthly(e.target.value)}>
+				Limiar de atraso (em meses) do mal pagador:
+				<select value={n_meses} onChange={(e) => setMonthly(e.target.value)}>
 				{monthlyBillList.map((mon) => {
 					return <option value={mon.value}>{mon.label}</option>;
 				})}
 				</select>
 			</div>
 			<div style={{textAlign: "left"}}>
-				Atraso considerado para perder crédito:
+				Número de vezes em que cliente ultrapassou limiar de atraso acima, para ser mal pagador:
 				<select value={credit} onChange={(e) => setCredit(e.target.value)}>
 				{losingCreditList.map((cre) => {
 					return <option value={cre.value}>{cre.label}</option>;
@@ -342,7 +320,7 @@ function App() {
 		<button onClick={() => handleRetrainClick()}>Retreinar</button> 
 		<br/>
 		<br/>
-		<h1>{currentModel}</h1>
+		<h4 style={{backgroundColor: "grey"}}>{currentModel}</h4>
 		
 		<br/><br/>
 	
@@ -435,7 +413,7 @@ function App() {
 	<button onClick={() => handleSimulClick()}>Simular crédito</button> 
 	<br/>
 	<br/>
-	<h4 style={{backgroundColor: "yellow"}}>{currentSimul}</h4>
+	<h4 style={{backgroundColor: "grey"}}>{currentSimul}</h4>
 	<br/><br/>
 	
 	
