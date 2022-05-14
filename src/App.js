@@ -116,7 +116,7 @@ function App() {
 	const estateTypeList = [{label:"Casa/apartamento próprio",value:0}, {label:"Mora com os pais",value:1}, {label:"Apartamento do Estado", value:2},{label:"Apartamento alugado", value:3},{label:"Escritório", value:4}];
 	const occupationList = [{label:"Profissional de limpeza",value:0}, {label:"Profissional de cozinha",value:1}, {label:"Motorista", value:2},{label:"Profissional", value:3},{label:"Profissional de baixa qualificação", value:4},{label:"Profissional de segurança", value:5},{label:"Garçom/barman", value:6},{label:"Contador(a)", value:7},{label:"Funcionário(a) de escritório", value:8},{label:"Funcionário(a) de RH", value:9},{label:"Profissional de saúde", value:10},{label:"Funcionário(a) do serviço privado", value:11},{label:"Corretor(a) de imóveis", value:12},{label:"Vendedor(a)", value:13},{label:"Secretário(a)", value:14},{label:"Gerente", value:15},{label:"Funcionário(a) de tecnologia qualificado(a)", value:16},{label:"Funcionário(a) de TI", value:17}];
 	const genderList = [{label:"Feminino",value:0}, {label:"Masculino",value:1}];
-	const techList = [{label:"Regressão Logística",value:0}, {label:"Árvore de Decisão",value:1}, {label:"Random Forest",value:2}, {label:"SVM",value:3},{label:"LGBM",value:4},{label:"XGBoost",value:5},{label:"Cat Boost (leva alguns minutos)",value:6}];
+	const techList = [{label:"Regressão Logística",value:0}, {label:"Árvore de Decisão",value:1}, {label:"Random Forest",value:2}, {label:"SVM",value:3},{label:"LGBM",value:4},{label:"XGBoost",value:5},{label:"CatBoost (leva alguns minutos)",value:6}];
 	const monthlyBillList	= [{label:"1 mês de atraso",value:0}, {label:"2 meses de atraso",value:1}, {label:"3 meses de atraso",value:2}, {label:"4 meses de atraso",value:3}, {label:"5 meses de atraso",value:4}];
 	const losingCreditList = [{label:"1 vez",value:0}, {label:"2 vezes",value:1}, {label:"3 vezes", value:2}, {label:"4 vezes", value:3}, {label:"5 vezes", value:4}];
 	
@@ -227,7 +227,7 @@ function App() {
   return (
 	<div className="App">
 
-		<h2>Ranking das métricas dos 10 melhores modelos treinados</h2>
+		<h2>Ranking de métricas dos 10 melhores modelos treinados</h2>
 		
 		<button style={{marginRight: "10"}} onClick={() => handleUpdateClick()}>Atualizar</button>
 		<button style={{marginLeft: "10"}} onClick={() => handleResetClick()}>Resetar</button> 
@@ -261,6 +261,7 @@ function App() {
 			})}
 			</select>
 		</div>
+		<br/>
 		<div style={{textAlign: "left"}}>
 		  <strong>Critérios para exclusão do crédito:</strong>
 			<div style={{textAlign: "left"}}>
@@ -285,12 +286,12 @@ function App() {
 		<button onClick={() => handleRetrainClick()}>Retreinar</button> 
 		<br/>
 		<br/>
-		<h4 style={{backgroundColor: "grey"}}>{currentModel}</h4>
+		<h5 style={{backgroundColor: "grey", display: "inline-block", padding: "5px", borderRadius: "3px"}}>{currentModel}</h5>
 		
 		<br/><br/>
 	
 	
-		<h2>Classificação de possível cliente</h2>
+		<h2>Classificação de concessão de crédito sob o modelo atual</h2>
 	
 	  <div style={{margin: 20}}>
 		<div>
@@ -378,19 +379,18 @@ function App() {
 	<button onClick={() => handleSimulClick()}>Simular crédito</button> 
 	<br/>
 	<br/>
-	<h4 style={{backgroundColor: "grey"}}>{currentSimul}</h4>
+	<h5 style={{backgroundColor: "grey", display: "inline-block", padding: "5px", borderRadius: "3px"}}>{currentSimul}</h5>
 	<br/><br/>
 	
 	
-	<h2>Evolução do pagamento de um cliente (id={clientId})</h2>
-		<p>Para encontrar os IDs de clientes, abra o banco clicando em Browse... e selecionando credit_record.csv</p>
-		<p>Para visualizar a evolução de um cliente:</p>
-		<ul>
-			<li>Digite seu ID abaixo e clique em Atualizar</li>
-			<li>Abra novamente o banco, clicando em Browse... e selecionando credit_record.csv</li>
-		</ul>
-	  <ResponsiveContainer width="100%" aspect={3}>
-			<LineChart data={chartData} margin={{ right: 300 }}>
+	<h2>Evolução do pagamento de um cliente por ID</h2>
+	<div style={{margin: "5%", marginTop: "0", backgroundColor: "#E6E3C1", borderRadius: "3px", padding: "10px"}}>
+		<p>Para visualizar a evolução de um cliente, digite seu ID abaixo e clique em "Atualizar". Depois, abra novamente o banco, clicando em "Browse..." e selecionando <i>credit_record.csv</i></p>
+		<p><strong>OBS.:</strong> Para encontrar o ID de um cliente, abra o banco abaixo, clicando em "Browse...", e selecione <i>credit_record.csv</i></p>
+	  <p><strong>OBS.:</strong> No gráfico abaixo, o eixo <i>y</i> representa o estado de um cliente no mês indicado pelo eixo <i>x</i>. A numeração dos meses se dá por 0 no mês atual, -1 no anterior, e assim por diante. O estado do cliente é 0 quando está em dia, 1 quando está há 1 mês devendo, 2 quando está há 2 meses etc.</p>
+	</div>
+		<ResponsiveContainer width="100%" aspect={3}>
+			<LineChart data={chartData}>
 				<CartesianGrid />
 				<XAxis dataKey='MONTHS_BALANCE' />
 				<YAxis></YAxis>
@@ -408,7 +408,7 @@ function App() {
 		<br/><br/><br/>
 	
 	
-	<h2>Banco de dados (CSV)</h2>
+	<h2>Banco de dados</h2>
 	
 	  <div style={{margin: 20}}>
 	    <input type="file" accept=".csv,.xlsx,.xls" onChange={handleFileUpload}/>
